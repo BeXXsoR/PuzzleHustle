@@ -5,12 +5,20 @@ import pygame
 # import pygame_button
 
 GREEN = (0, 153, 0)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
 PREVIEW_PREFIX = "res/preview"
 ARROW_LEFT_PREFIX = "res/arrow_left_grey"
 ARROW_RIGHT_PREFIX = "res/arrow_right_grey"
 PLAY_PREFIX = "res/play_grey"
 PNG_SUFFIX = ".png"
-ARROW_SIZE = (43, 69)
+ARROW_SIZE = (90, 90)
+PLAY_BUTTON_SIZE = (315, 135)
+HEIGHT_FOR_IMAGE = 0.5
+HEIGHT_FOR_DIFFICULTY = 0.65
+HEIGHT_FOR_PLAY_BUTTON = 0.8
+WIDTH_FOR_ARROW_LEFT = 0.35
+WIDTH_FOR_ARROW_RIGHT = 1 - WIDTH_FOR_ARROW_LEFT
 FPS = 30
 
 
@@ -65,33 +73,43 @@ class ArrowGroup(pygame.sprite.Group):
 class StartMenu:
 	"""The class for everything related to the start menu"""
 	def __init__(self, main_surface: pygame.Surface):
-		# self.button_play = pygame_button.PygameButton(main_surface.get_rect(), "Play", self.start_puzzle)
-		# self.button_choose_image = pygame_button.PygameButton(main_surface.get_rect(), "Choose image", self.choose_image)
+		pygame.font.init()
 		self.main_surface = main_surface
-		self.images = []
+		self.images = list[pygame.Surface]()
 		self.difficulty_texts = ["Easy (48 pieces)", "Medium (108 pieces)", "Hard (192 pieces)"]
+		self.difficulty_font = pygame.font.Font(None, 80)
 		self.chosen_image_id = None
 		self.chosen_difficulty = 0
 		self.puzzle_is_starting = False
+		self.image_center = (self.main_surface.get_rect().center[0], HEIGHT_FOR_IMAGE * self.main_surface.get_height())
+		self.difficulty_center = (self.image_center[0], HEIGHT_FOR_DIFFICULTY * self.main_surface.get_height())
+		self.play_button_center = (self.difficulty_center[0], HEIGHT_FOR_PLAY_BUTTON * self.main_surface.get_height())
 		self.clock = pygame.time.Clock()
+		self.sound_confirmed = pygame.mixer.Sound("res/Confirmed.wav")
 		# Initialize buttons
 		self.button_group = ClickableGroup()
 		on_click_functions = [self.decrement_image_id, self.increment_image_id, self.decrement_difficulty, self.increment_difficulty]
 		# Arrow buttons to navigate through the images and difficulties
 		for i, j in itertools.product(range(2), range(2)):
-			prefix = ARROW_RIGHT_PREFIX if j == 1 else ARROW_LEFT_PREFIX
+			prefix = ARROW_LEFT_PREFIX if j == 0 else ARROW_RIGHT_PREFIX
 			cur_image = pygame.image.load(prefix + PNG_SUFFIX).convert_alpha()
-			cur_button = Button(cur_image, pygame.Rect((400 + j * 700, 750 + i * 600), cur_image.get_size()), on_click_functions[2 * i + j])
+			cur_image = pygame.transform.scale(cur_image, ARROW_SIZE)
+			cur_center = (
+				self.main_surface.get_width() * (WIDTH_FOR_ARROW_LEFT if j == 0 else WIDTH_FOR_ARROW_RIGHT),
+				self.image_center[1] if i == 0 else self.difficulty_center[1])
+			cur_button = Button(cur_image, cur_image.get_rect(center=cur_center), on_click_functions[2 * i + j])
 			self.button_group.add(cur_button)
 		# Play button
-		image = pygame.image.load(PLAY_PREFIX + PNG_SUFFIX).convert_alpha()
-		play_button = Button(image, pygame.Rect((1000, 900), image.get_size()), self.start_puzzle)
+		cur_image = pygame.image.load(PLAY_PREFIX + PNG_SUFFIX).convert_alpha()
+		cur_image = pygame.transform.scale(cur_image, PLAY_BUTTON_SIZE)
+		play_button = Button(cur_image, cur_image.get_rect(center=self.play_button_center), self.start_puzzle)
 		self.button_group.add(play_button)
 		self.prepare_preview_images()
 		self.update_menu()
 
 	def prepare_preview_images(self):
-		preview_size = (500, 500)
+		"""Load and scale the images for the preview where the user can choose the puzzle image"""
+		preview_size = (400, 300)
 		i = 0
 		while True:
 			try:
@@ -104,9 +122,16 @@ class StartMenu:
 		self.chosen_image_id = 0
 
 	def update_menu(self):
+		"""Redraw the start menu"""
+		cur_image = self.images[self.chosen_image_id]
 		self.main_surface.fill(GREEN)
-		self.main_surface.blit(self.images[self.chosen_image_id], (500, 500))
+		self.main_surface.blit(cur_image, cur_image.get_rect(center=self.image_center))
+		cur_difficulty_font = self.difficulty_font.render(self.difficulty_texts[self.chosen_difficulty], True, RED)
+		self.main_surface.blit(cur_difficulty_font, cur_difficulty_font.get_rect(center=self.difficulty_center))
 		self.button_group.draw(self.main_surface)
+		# Game title
+		title_font = pygame.font.Font(None, 400).render("Puzzle Hustle", True, BLUE)
+		self.main_surface.blit(title_font, title_font.get_rect(center=(self.main_surface.get_rect().center[0], 200)))
 		pygame.display.update()
 
 	def handle_events(self) -> (bool, int, int):
@@ -115,11 +140,12 @@ class StartMenu:
 		[0] a bool to indicate if the puzzle shall start,
 		[1] the chosen image id and
 		[2] the chosen difficulty"""
-		while not self.puzzle_is_starting:
+		has_quit = False
+		while not self.puzzle_is_starting and not has_quit:
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
 					# Quit
-					break
+					has_quit = True
 				elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
 					# Click
 					self.button_group.collide_click(event.pos)
@@ -128,16 +154,22 @@ class StartMenu:
 		return self.puzzle_is_starting, self.chosen_image_id, self.chosen_difficulty
 
 	def start_puzzle(self):
+		"""Start the puzzle"""
+		self.sound_confirmed.play()
 		self.puzzle_is_starting = True
 
 	def increment_image_id(self):
+		"""Increment the image id"""
 		self.chosen_image_id = (self.chosen_image_id + 1) % len(self.images)
 
 	def decrement_image_id(self):
+		"""Decrement the image id"""
 		self.chosen_image_id = (self.chosen_image_id - 1) % len(self.images)
 
 	def increment_difficulty(self):
+		"""Increment the difficulty"""
 		self.chosen_difficulty = (self.chosen_difficulty + 1) % len(self.difficulty_texts)
 
 	def decrement_difficulty(self):
+		"""Decrement the difficulty"""
 		self.chosen_difficulty = (self.chosen_difficulty - 1) % len(self.difficulty_texts)

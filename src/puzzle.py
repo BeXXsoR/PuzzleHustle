@@ -27,8 +27,8 @@ NUM_COLUMNS = 12
 NUM_PIECES = NUM_ROWS * NUM_COLUMNS
 IMAGE_WIDTH = 4032
 IMAGE_HEIGHT = 3024
-PIECE_WIDTH_ORIG = 500
-PIECE_HEIGHT_ORIG = 500
+# PIECE_WIDTH_ORIG = 500
+# PIECE_HEIGHT_ORIG = 500
 CLIPPER_SIZE = 82
 NO_CLIPPER_PIECE_SIZE = 335
 NUM_ROTATIONS = 4
@@ -70,11 +70,21 @@ sound_victory = pygame.mixer.Sound("res/Victory.wav")
 fireworks_anim = animations.Animation("res/fireworks.gif", (1000, 1000))
 anim_play_event = pygame.event.Event(PLAY_ANIMATION, {})
 anim_stop_event = pygame.event.Event(STOP_ANIMATION, {})
+
+
 # ------ Classes ------
+class PuzzleHustle:
+    def __init__(self):
+        pass
+
+
+
+
+
 
 
 # ------ Methods ------
-def main_game_loop():
+def main_game_loop(image_id: int, difficulty: int):
     """Main entry point for the game"""
     initialize_puzzle_pieces()
     sel_piece_idx = None
@@ -294,5 +304,5 @@ if __name__ == "__main__":
     menu = start_menu.StartMenu(main_surface)
     start_puzzle, image_id, difficulty = menu.handle_events()
     if start_puzzle:
-        main_game_loop()
+        main_game_loop(image_id, difficulty)
     sys.exit()
