@@ -49,27 +49,6 @@ class ClickableGroup(pygame.sprite.Group):
 					continue
 
 
-class Arrow(pygame.sprite.Sprite):
-	"""The sprite for the arrows with which the user navigates through the image previews and difficulties"""
-	def __init__(self, points_to_right: bool, is_for_image: bool, rect: pygame.Rect):
-		pygame.sprite.Sprite.__init__(self)
-		self.points_to_right = points_to_right
-		self.is_for_image = is_for_image
-		prefix = ARROW_RIGHT_PREFIX if points_to_right else ARROW_LEFT_PREFIX
-		self.image = pygame.image.load(prefix + PNG_SUFFIX).convert_alpha()
-		self.rect = rect
-
-
-class ArrowGroup(pygame.sprite.Group):
-	"""The sprites group for the arrows with which the user navigates through the image previews and difficulties"""
-	def __init__(self):
-		pygame.sprite.Group.__init__(self)
-
-	def collide_point(self, point: tuple):
-		"""Return all arrows in the group that collide with the given point"""
-		return [arrow for arrow in self.sprites() if arrow.rect.collidepoint(point) and type(arrow) is Arrow]
-
-
 class StartMenu:
 	"""The class for everything related to the start menu"""
 	def __init__(self, main_surface: pygame.Surface):
