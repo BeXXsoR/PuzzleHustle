@@ -4,9 +4,11 @@
 import sys
 import itertools
 import random
-import utils
 import pygame
+import utils
 import animations
+# import pygame_button
+import start_menu
 
 pygame.init()
 
@@ -17,8 +19,8 @@ GREEN = (0, 153, 0)
 TRANSPARENT = (0, 0, 0, 0)
 BG_COLOR = GREEN
 FPS = 30
-IMAGE_NAME = "Tier_Puzzle"
-FILE_PREFIX = "res/" + IMAGE_NAME + "/" + IMAGE_NAME
+IMAGE_NAMES = ["Tier_Puzzle_108"]
+FILE_PREFIX = "res/" + IMAGE_NAMES[0] + "/" + IMAGE_NAMES[0] + "_"
 FILE_SUFFIX = ".png"
 NUM_ROWS = 9
 NUM_COLUMNS = 12
@@ -62,17 +64,17 @@ piece_width = int(piece_width_core + 2 * scaled_clipper_size)
 piece_height = int(piece_height_core + 2 * scaled_clipper_size)
 cur_zoom = 1.0
 pygame.mixer.init()
-img_menu_bar = pygame.image.load("../res/Menu_Bar.png")
-sound_connected = pygame.mixer.Sound("../res/Connected.wav")
-sound_victory = pygame.mixer.Sound("../res/Victory.wav")
-fireworks_anim = animations.Animation("../res/fireworks.gif", (1000, 1000))
+img_menu_bar = pygame.image.load("res/Menu_Bar.png")
+sound_connected = pygame.mixer.Sound("res/Connected.wav")
+sound_victory = pygame.mixer.Sound("res/Victory.wav")
+fireworks_anim = animations.Animation("res/fireworks.gif", (1000, 1000))
 anim_play_event = pygame.event.Event(PLAY_ANIMATION, {})
 anim_stop_event = pygame.event.Event(STOP_ANIMATION, {})
 # ------ Classes ------
 
 
 # ------ Methods ------
-def main():
+def main_game_loop():
     """Main entry point for the game"""
     initialize_puzzle_pieces()
     sel_piece_idx = None
@@ -80,7 +82,6 @@ def main():
     is_running = True
     while is_running:
         for event in pygame.event.get():
-            # print(event)
             if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                 # Quit
                 is_running = False
@@ -165,7 +166,7 @@ def rotate_piece(sel_piece_idx: int) -> None:
         new_pos = [sel_pos[0] + dist_pre[1], sel_pos[1] - dist_pre[0]]
         piece_states[cur_piece_idx][1] = new_pos
         piece_states[cur_piece_idx][2] = (piece_states[cur_piece_idx][2] + 1) % NUM_ROTATIONS
-        piece_states[cur_piece_idx][0] = pygame.transform.rotate(piece_states[cur_piece_idx][0], 90)
+        piece_states[cur_piece_idx][0] = pygame.transform.rotate(piece_states[cur_piece_idx][0], ROTATION_DEGREE)
 
 
 def initialize_puzzle_pieces() -> None:
@@ -290,6 +291,8 @@ def zoom(new_zoom: float) -> None:
 
 # ------ Main script ------
 if __name__ == "__main__":
-    sys.exit(main())
-
-
+    menu = start_menu.StartMenu(main_surface)
+    start_puzzle, image_id, difficulty = menu.handle_events()
+    if start_puzzle:
+        main_game_loop()
+    sys.exit()
