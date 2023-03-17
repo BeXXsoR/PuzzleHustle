@@ -1,6 +1,6 @@
 """The start menu for the puzzle game"""
 import itertools
-
+import utils
 import pygame
 # import pygame_button
 
@@ -12,20 +12,33 @@ ARROW_LEFT_PREFIX = "res/arrow_left_grey"
 ARROW_RIGHT_PREFIX = "res/arrow_right_grey"
 PLAY_PREFIX = "res/play_grey"
 PNG_SUFFIX = ".png"
+# The following menu item sizes work well on a 2560x1440 screen, so I use these as a benchmark for scaling.
+# ARROW_SIZE = (90, 90)
+# PLAY_BUTTON_SIZE = (315, 135)
+# HEIGHT_FOR_IMAGE = 0.5
+# HEIGHT_FOR_DIFFICULTY = 0.65
+# HEIGHT_FOR_PLAY_BUTTON = 0.8
+# HEIGHT_FOR_OPEN_BOX_MSG = 0.9
 ARROW_SIZE = (90, 90)
 PLAY_BUTTON_SIZE = (315, 135)
+PREVIEW_IMG_SIZE = (400, 300)
+BENCHMARK_HEIGHT = 1440
+HEIGHT_FOR_TITLE = 0.1
 HEIGHT_FOR_IMAGE = 0.5
 HEIGHT_FOR_DIFFICULTY = 0.65
 HEIGHT_FOR_PLAY_BUTTON = 0.8
+HEIGHT_FOR_OPEN_BOX_MSG = 0.8
 WIDTH_FOR_ARROW_LEFT = 0.35
 WIDTH_FOR_ARROW_RIGHT = 1 - WIDTH_FOR_ARROW_LEFT
+DIFFICULTY_FONT_SIZE = 80
+TITLE_FONT_SIZE = 400
 FPS = 30
 
 
-class Button(pygame.sprite.Sprite):
+class Clickable(pygame.sprite.Sprite):
 	"""Sprite subclass for the buttons in the start menu"""
 	def __init__(self, image: pygame.Surface, rect: pygame.Rect, on_click_function):
-		pygame.sprite.Sprite.__init__(self)
+		super().__init__()
 		self.image = image
 		self.rect = rect
 		self.on_click_function = on_click_function
@@ -35,9 +48,9 @@ class Button(pygame.sprite.Sprite):
 
 
 class ClickableGroup(pygame.sprite.Group):
-	"""The sprites group for the arrows with which the user navigates through the image previews and difficulties"""
-	def __init__(self):
-		pygame.sprite.Group.__init__(self)
+	"""Sprites group for the buttons in the start menu"""
+	def __init__(self, *sprites):
+		super().__init__(*sprites)
 
 	def collide_click(self, point: (int, int)):
 		"""Call the on click method of the sprites that collide with the given point"""
@@ -54,15 +67,22 @@ class StartMenu:
 	def __init__(self, main_surface: pygame.Surface):
 		pygame.font.init()
 		self.main_surface = main_surface
+		self.scaling_factor = main_surface.get_height() / BENCHMARK_HEIGHT
 		self.images = list[pygame.Surface]()
 		self.difficulty_texts = ["Easy (48 pieces)", "Medium (108 pieces)", "Hard (192 pieces)"]
-		self.difficulty_font = pygame.font.Font(None, 80)
+		self.difficulty_font = pygame.font.Font(None, int(DIFFICULTY_FONT_SIZE * self.scaling_factor))
+		self.title_font = pygame.font.Font(None, int(TITLE_FONT_SIZE * self.scaling_factor))
+		self.msg_font = self.difficulty_font
+		self.title_rendered = self.title_font.render("Puzzle Hustle", True, BLUE)
+		self.msg_rendered = self.msg_font.render("Opening puzzle box, please wait ...", True, BLUE)
 		self.chosen_image_id = None
 		self.chosen_difficulty = 0
 		self.puzzle_is_starting = False
+		self.title_center = (self.main_surface.get_rect().center[0], HEIGHT_FOR_TITLE * self.main_surface.get_height())
 		self.image_center = (self.main_surface.get_rect().center[0], HEIGHT_FOR_IMAGE * self.main_surface.get_height())
 		self.difficulty_center = (self.image_center[0], HEIGHT_FOR_DIFFICULTY * self.main_surface.get_height())
 		self.play_button_center = (self.difficulty_center[0], HEIGHT_FOR_PLAY_BUTTON * self.main_surface.get_height())
+		self.msg_center = (self.play_button_center[0], HEIGHT_FOR_OPEN_BOX_MSG * self.main_surface.get_height())
 		self.clock = pygame.time.Clock()
 		self.sound_confirmed = pygame.mixer.Sound("res/Confirmed.wav")
 		# Initialize buttons
@@ -72,45 +92,50 @@ class StartMenu:
 		for i, j in itertools.product(range(2), range(2)):
 			prefix = ARROW_LEFT_PREFIX if j == 0 else ARROW_RIGHT_PREFIX
 			cur_image = pygame.image.load(prefix + PNG_SUFFIX).convert_alpha()
-			cur_image = pygame.transform.scale(cur_image, ARROW_SIZE)
+			cur_image = pygame.transform.scale(cur_image, utils.mult_tuple_to_int(ARROW_SIZE, self.scaling_factor))
 			cur_center = (
 				self.main_surface.get_width() * (WIDTH_FOR_ARROW_LEFT if j == 0 else WIDTH_FOR_ARROW_RIGHT),
 				self.image_center[1] if i == 0 else self.difficulty_center[1])
-			cur_button = Button(cur_image, cur_image.get_rect(center=cur_center), on_click_functions[2 * i + j])
+			cur_button = Clickable(cur_image, cur_image.get_rect(center=cur_center), on_click_functions[2 * i + j])
 			self.button_group.add(cur_button)
 		# Play button
 		cur_image = pygame.image.load(PLAY_PREFIX + PNG_SUFFIX).convert_alpha()
-		cur_image = pygame.transform.scale(cur_image, PLAY_BUTTON_SIZE)
-		play_button = Button(cur_image, cur_image.get_rect(center=self.play_button_center), self.start_puzzle)
+		cur_image = pygame.transform.scale(cur_image, utils.mult_tuple_to_int(PLAY_BUTTON_SIZE, self.scaling_factor))
+		play_button = Clickable(cur_image, cur_image.get_rect(center=self.play_button_center), self.start_puzzle)
 		self.button_group.add(play_button)
+		# self.play_button_group = pygame.sprite.LayeredDirty(play_button)
 		self.prepare_preview_images()
 		self.update_menu()
 
 	def prepare_preview_images(self):
 		"""Load and scale the images for the preview where the user can choose the puzzle image"""
-		preview_size = (400, 300)
 		i = 0
 		while True:
 			try:
 				image = pygame.image.load(PREVIEW_PREFIX + str(i) + PNG_SUFFIX).convert_alpha()
 			except FileNotFoundError:
 				break
-			image = pygame.transform.scale(image, preview_size)
+			image = pygame.transform.scale(image, utils.mult_tuple_to_int(PREVIEW_IMG_SIZE, self.scaling_factor))
 			self.images.append(image)
 			i += 1
 		self.chosen_image_id = 0
 
 	def update_menu(self):
 		"""Redraw the start menu"""
+		# Preview image
 		cur_image = self.images[self.chosen_image_id]
 		self.main_surface.fill(GREEN)
 		self.main_surface.blit(cur_image, cur_image.get_rect(center=self.image_center))
+		# Difficulty
 		cur_difficulty_font = self.difficulty_font.render(self.difficulty_texts[self.chosen_difficulty], True, RED)
 		self.main_surface.blit(cur_difficulty_font, cur_difficulty_font.get_rect(center=self.difficulty_center))
+		# Buttons
 		self.button_group.draw(self.main_surface)
 		# Game title
-		title_font = pygame.font.Font(None, 400).render("Puzzle Hustle", True, BLUE)
-		self.main_surface.blit(title_font, title_font.get_rect(center=(self.main_surface.get_rect().center[0], 200)))
+		self.main_surface.blit(self.title_rendered, self.title_rendered.get_rect(center=self.title_center))
+		# Message (puzzle is starting)
+		if self.puzzle_is_starting:
+			self.main_surface.blit(self.msg_rendered, self.msg_rendered.get_rect(center=self.msg_center))
 		pygame.display.update()
 
 	def handle_events(self) -> (bool, int, int):
@@ -136,6 +161,8 @@ class StartMenu:
 		"""Start the puzzle"""
 		self.sound_confirmed.play()
 		self.puzzle_is_starting = True
+		# Adjust the start menu to show that the puzzle will start shortly
+		self.button_group.empty()
 
 	def increment_image_id(self):
 		"""Increment the image id"""

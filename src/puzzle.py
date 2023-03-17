@@ -15,14 +15,13 @@ pygame.init()
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 153, 0)
-TRANSPARENT = (0, 0, 0, 0)
 BG_COLOR = GREEN
 FPS = 30
 IMAGE_NAMES = [["Tier_Puzzle_48", "Tier_Puzzle_108", "Tier_Puzzle_192"],
                ["SPO_Puzzle_48", "SPO_Puzzle_108", "SPO_Puzzle_192"],
-               ["Dradra_Puzzle_48", "Dradra_Puzzle_108", "Dradra_Puzzle_192"]]
+               ["Dradra_Puzzle_48", "Dradra_Puzzle_108", "Dradra_Puzzle_192"],
+               ["Wuerfeln_Puzzle_48", "Wuerfeln_Puzzle_108", "Wuerfeln_Puzzle_192"]]
 FILE_NAME = "res/{image_name}/{image_name}_{row}_{column}.png"
-# FILE_SUFFIX = ".png"
 NUM_ROWS = [6, 9, 12]
 NUM_COLUMNS = [8, 12, 16]
 IMAGE_WIDTH = 4032
