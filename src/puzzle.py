@@ -17,6 +17,7 @@ RED = (255, 0, 0)
 GREEN = (0, 153, 0)
 BG_COLOR = GREEN
 FPS = 30
+BG_FILE_NAME = "res/background.png"
 IMAGE_NAMES = [["Tier_Puzzle_48", "Tier_Puzzle_108", "Tier_Puzzle_192"],
                ["SPO_Puzzle_48", "SPO_Puzzle_108", "SPO_Puzzle_192"],
                ["Dradra_Puzzle_48", "Dradra_Puzzle_108", "Dradra_Puzzle_192"],
@@ -39,16 +40,10 @@ STOP_ANIMATION = pygame.event.custom_type()
 
 # ------ Classes ------
 class PuzzleHustle:
-    def __init__(self, surface: pygame.Surface, image_id: int, difficulty: int):
-        self.image_id = image_id
-        self.difficulty = difficulty
-        self.image_name = IMAGE_NAMES[self.image_id][self.difficulty]
-        # self.file_prefix = FILE_PREFIX.format(image_name=)
-        self.num_rows = NUM_ROWS[self.difficulty]
-        self.num_columns = NUM_COLUMNS[self.difficulty]
-        self.num_pieces = self.num_rows * self.num_columns
-        self.clipper_size = CLIPPER_SIZE[self.difficulty]
-        self.main_surface = surface
+    def __init__(self):
+        self.main_surface = pygame.display.set_mode((0, 0))
+        self.bg_image = pygame.transform.scale(pygame.image.load(BG_FILE_NAME).convert_alpha(),
+                                               self.main_surface.get_size())
         self.clock = pygame.time.Clock()
         self.piece_states = []
         # piece_states keeps track of the state of all pieces. It's items are tuples with the following elements: [0]
@@ -65,11 +60,6 @@ class PuzzleHustle:
             self.puzzle_width = PICTURE_TO_DISPLAY_RATIO * self.main_surface.get_width()
             self.puzzle_height = self.puzzle_width * IMAGE_HEIGHT / IMAGE_WIDTH
         self.scale_factor = self.puzzle_height / IMAGE_HEIGHT
-        self.scaled_clipper_size = self.scale_factor * self.clipper_size
-        self.piece_width_core = self.puzzle_width // self.num_columns
-        self.piece_height_core = self.puzzle_height // self.num_rows
-        self.piece_width = int(self.piece_width_core + 2 * self.scaled_clipper_size)
-        self.piece_height = int(self.piece_height_core + 2 * self.scaled_clipper_size)
         self.cur_zoom = 1.0
         pygame.mixer.init()
         self.sound_connected = pygame.mixer.Sound("res/Connected.wav")
@@ -77,9 +67,43 @@ class PuzzleHustle:
         self.fireworks_anim = animations.Animation("res/fireworks.gif", (1000, 1000))
         self.anim_play_event = pygame.event.Event(PLAY_ANIMATION, {})
         self.anim_stop_event = pygame.event.Event(STOP_ANIMATION, {})
+        self.start_menu = start_menu.StartMenu(self.main_surface, self.bg_image)
+        self.image_id = None
+        self.difficulty = None
+        self.image_name = None
+        self.num_rows = None
+        self.num_columns = None
+        self.clipper_size = None
+        self.num_pieces = None
+        self.scaled_clipper_size = None
+        self.piece_width_core = None
+        self.piece_height_core = None
+        self.piece_width = None
+        self.piece_height = None
+
+    def set_image_and_difficulty(self, image_id: int = None, difficulty: int = None):
+        if image_id is not None:
+            self.image_id = image_id
+        if difficulty is not None:
+            self.difficulty = difficulty
+        self.image_name = IMAGE_NAMES[self.image_id][self.difficulty]
+        self.num_rows = NUM_ROWS[self.difficulty]
+        self.num_columns = NUM_COLUMNS[self.difficulty]
+        self.clipper_size = CLIPPER_SIZE[self.difficulty]
+        self.num_pieces = self.num_rows * self.num_columns
+        self.scaled_clipper_size = self.scale_factor * self.clipper_size
+        self.piece_width_core = self.puzzle_width // self.num_columns
+        self.piece_height_core = self.puzzle_height // self.num_rows
+        self.piece_width = int(self.piece_width_core + 2 * self.scaled_clipper_size)
+        self.piece_height = int(self.piece_height_core + 2 * self.scaled_clipper_size)
 
     def main_game_loop(self):
         """Main entry point for the game"""
+        # Handle start menu
+        start_puzzle, image_id, difficulty = self.start_menu.handle_events()
+        if not start_puzzle:
+            return
+        self.set_image_and_difficulty(image_id, difficulty)
         self.initialize_puzzle_pieces()
         sel_piece_idx = None
         zoom_key_pressed = False
@@ -191,6 +215,7 @@ class PuzzleHustle:
     def update_display(self) -> None:
         """Blit all puzzle pieces to the main surface"""
         self.main_surface.fill(BG_COLOR)
+        # self.main_surface.blit(self.bg_image, (0, 0))
         for idx in self.piece_idx_stack:
             self.main_surface.blit(self.piece_states[idx][0], self.piece_states[idx][1])
         pygame.display.update()
@@ -286,11 +311,5 @@ class PuzzleHustle:
 
 # ------ Main script ------
 if __name__ == "__main__":
-    main_surface = pygame.display.set_mode((0, 0))
-    menu = start_menu.StartMenu(main_surface)
-    start_puzzle, image_id, difficulty = menu.handle_events()
-    if start_puzzle:
-        game = PuzzleHustle(main_surface, image_id, difficulty)
-        sys.exit(game.main_game_loop())
-    else:
-        sys.exit()
+    game = PuzzleHustle()
+    sys.exit(game.main_game_loop())

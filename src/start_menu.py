@@ -7,22 +7,20 @@ import pygame
 GREEN = (0, 153, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
+BG_PREFIX = "res/background"
 PREVIEW_PREFIX = "res/preview"
 ARROW_LEFT_PREFIX = "res/arrow_left_grey"
 ARROW_RIGHT_PREFIX = "res/arrow_right_grey"
 PLAY_PREFIX = "res/play_grey"
 PNG_SUFFIX = ".png"
-# The following menu item sizes work well on a 2560x1440 screen, so I use these as a benchmark for scaling.
-# ARROW_SIZE = (90, 90)
-# PLAY_BUTTON_SIZE = (315, 135)
-# HEIGHT_FOR_IMAGE = 0.5
-# HEIGHT_FOR_DIFFICULTY = 0.65
-# HEIGHT_FOR_PLAY_BUTTON = 0.8
-# HEIGHT_FOR_OPEN_BOX_MSG = 0.9
+FPS = 30
+# The following menu item sizes work well on a 2560x1440 screen, so I use them as a benchmark for scaling.
 ARROW_SIZE = (90, 90)
 PLAY_BUTTON_SIZE = (315, 135)
 PREVIEW_IMG_SIZE = (400, 300)
 BENCHMARK_HEIGHT = 1440
+DIFFICULTY_FONT_SIZE = 80
+TITLE_FONT_SIZE = 400
 HEIGHT_FOR_TITLE = 0.1
 HEIGHT_FOR_IMAGE = 0.5
 HEIGHT_FOR_DIFFICULTY = 0.65
@@ -30,9 +28,6 @@ HEIGHT_FOR_PLAY_BUTTON = 0.8
 HEIGHT_FOR_OPEN_BOX_MSG = 0.8
 WIDTH_FOR_ARROW_LEFT = 0.35
 WIDTH_FOR_ARROW_RIGHT = 1 - WIDTH_FOR_ARROW_LEFT
-DIFFICULTY_FONT_SIZE = 80
-TITLE_FONT_SIZE = 400
-FPS = 30
 
 
 class Clickable(pygame.sprite.Sprite):
@@ -64,11 +59,12 @@ class ClickableGroup(pygame.sprite.Group):
 
 class StartMenu:
 	"""The class for everything related to the start menu"""
-	def __init__(self, main_surface: pygame.Surface):
+	def __init__(self, main_surface: pygame.Surface, bg_image: pygame.Surface = None):
 		pygame.font.init()
 		self.main_surface = main_surface
 		self.scaling_factor = main_surface.get_height() / BENCHMARK_HEIGHT
-		self.images = list[pygame.Surface]()
+		self.bg_image = bg_image
+		self.preview_images = list[pygame.Surface]()
 		self.difficulty_texts = ["Easy (48 pieces)", "Medium (108 pieces)", "Hard (192 pieces)"]
 		self.difficulty_font = pygame.font.Font(None, int(DIFFICULTY_FONT_SIZE * self.scaling_factor))
 		self.title_font = pygame.font.Font(None, int(TITLE_FONT_SIZE * self.scaling_factor))
@@ -104,11 +100,16 @@ class StartMenu:
 		play_button = Clickable(cur_image, cur_image.get_rect(center=self.play_button_center), self.start_puzzle)
 		self.button_group.add(play_button)
 		# self.play_button_group = pygame.sprite.LayeredDirty(play_button)
-		self.prepare_preview_images()
+		self.prepare_images()
 		self.update_menu()
 
-	def prepare_preview_images(self):
-		"""Load and scale the images for the preview where the user can choose the puzzle image"""
+	def prepare_images(self):
+		"""Load and scale the images for the start menu"""
+		# Background image (if necessary)
+		if not self.bg_image:
+			self.bg_image = pygame.image.load(BG_PREFIX + PNG_SUFFIX).convert_alpha()
+			self.bg_image = pygame.transform.scale(self.bg_image, self.main_surface.get_size())
+		# Preview images
 		i = 0
 		while True:
 			try:
@@ -116,15 +117,16 @@ class StartMenu:
 			except FileNotFoundError:
 				break
 			image = pygame.transform.scale(image, utils.mult_tuple_to_int(PREVIEW_IMG_SIZE, self.scaling_factor))
-			self.images.append(image)
+			self.preview_images.append(image)
 			i += 1
 		self.chosen_image_id = 0
 
 	def update_menu(self):
 		"""Redraw the start menu"""
+		# Background
+		self.main_surface.blit(self.bg_image, (0, 0))
 		# Preview image
-		cur_image = self.images[self.chosen_image_id]
-		self.main_surface.fill(GREEN)
+		cur_image = self.preview_images[self.chosen_image_id]
 		self.main_surface.blit(cur_image, cur_image.get_rect(center=self.image_center))
 		# Difficulty
 		cur_difficulty_font = self.difficulty_font.render(self.difficulty_texts[self.chosen_difficulty], True, RED)
@@ -132,7 +134,7 @@ class StartMenu:
 		# Buttons
 		self.button_group.draw(self.main_surface)
 		# Game title
-		self.main_surface.blit(self.title_rendered, self.title_rendered.get_rect(center=self.title_center))
+		# self.main_surface.blit(self.title_rendered, self.title_rendered.get_rect(center=self.title_center))
 		# Message (puzzle is starting)
 		if self.puzzle_is_starting:
 			self.main_surface.blit(self.msg_rendered, self.msg_rendered.get_rect(center=self.msg_center))
@@ -166,11 +168,11 @@ class StartMenu:
 
 	def increment_image_id(self):
 		"""Increment the image id"""
-		self.chosen_image_id = (self.chosen_image_id + 1) % len(self.images)
+		self.chosen_image_id = (self.chosen_image_id + 1) % len(self.preview_images)
 
 	def decrement_image_id(self):
 		"""Decrement the image id"""
-		self.chosen_image_id = (self.chosen_image_id - 1) % len(self.images)
+		self.chosen_image_id = (self.chosen_image_id - 1) % len(self.preview_images)
 
 	def increment_difficulty(self):
 		"""Increment the difficulty"""
