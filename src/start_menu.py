@@ -2,7 +2,6 @@
 import itertools
 import utils
 import pygame
-# import pygame_button
 
 GREEN = (0, 153, 0)
 RED = (255, 0, 0)
