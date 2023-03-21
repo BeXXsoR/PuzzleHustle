@@ -18,10 +18,10 @@ GREEN = (0, 153, 0)
 BG_COLOR = GREEN
 FPS = 30
 BG_FILE_NAME = "res/background.png"
-IMAGE_NAMES = [["Tier_Puzzle_48", "Tier_Puzzle_108", "Tier_Puzzle_192"],
-               ["SPO_Puzzle_48", "SPO_Puzzle_108", "SPO_Puzzle_192"],
-               ["Dradra_Puzzle_48", "Dradra_Puzzle_108", "Dradra_Puzzle_192"],
-               ["Wuerfeln_Puzzle_48", "Wuerfeln_Puzzle_108", "Wuerfeln_Puzzle_192"]]
+IMAGE_NAMES = [["Tier_48", "Tier_108", "Tier_192"],
+               ["SPO_48", "SPO_108", "SPO_192"],
+               ["Dradra_48", "Dradra_108", "Dradra_192"],
+               ["Wuerfeln_48", "Wuerfeln_108", "Wuerfeln_192"]]
 FILE_NAME = "res/{image_name}/{image_name}_{row}_{column}.png"
 NUM_ROWS = [6, 9, 12]
 NUM_COLUMNS = [8, 12, 16]
@@ -107,6 +107,7 @@ class PuzzleHustle:
         self.initialize_puzzle_pieces()
         sel_piece_idx = None
         zoom_key_pressed = False
+        move_bg = False
         is_running = True
         while is_running:
             for event in pygame.event.get():
@@ -125,6 +126,8 @@ class PuzzleHustle:
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     # Left click - get the clicked piece
                     sel_piece_idx = self.get_idx_of_selected_piece(event.pos)
+                    if sel_piece_idx is None:
+                        move_bg = True
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
                     # Right click - rotate the clicked piece
                     piece_idx = self.get_idx_of_selected_piece(event.pos)
@@ -134,6 +137,7 @@ class PuzzleHustle:
                 elif event.type == pygame.MOUSEBUTTONUP:
                     # release the clicked piece
                     sel_piece_idx = None
+                    move_bg = False
                     pygame.mouse.set_cursor(pygame.cursors.Cursor(pygame.SYSTEM_CURSOR_ARROW))
                 elif event.type == pygame.MOUSEMOTION and event.buttons[0] == 1:
                     # Drag and drop
@@ -148,7 +152,7 @@ class PuzzleHustle:
                             self.sound_connected.play()
                             sel_piece_idx = None
                             self.check_win()
-                    else:
+                    elif move_bg:
                         # Drag and drop on the background - move background (i.e. move all pieces)
                         self.move_all_pieces(event.rel)
                     self.update_display()
