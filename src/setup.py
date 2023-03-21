@@ -4,7 +4,7 @@ from cx_Freeze import setup, Executable
 
 build_exe_options = {
 	"packages": ["pygame"],
-	"include_files": ["../res", "../README.md"],
+	"include_files": ["../res"],
 	"includes": ["start_menu", "utils", "animations"],
 	"build_exe": "build_win64",
 	"silent_level": 1
