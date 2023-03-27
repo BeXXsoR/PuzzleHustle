@@ -4,10 +4,10 @@
 import sys
 import itertools
 import random
-import pygame
 import utils
 import animations
 import start_menu
+import pygame
 
 pygame.init()
 
@@ -17,12 +17,15 @@ RED = (255, 0, 0)
 GREEN = (0, 153, 0)
 BG_COLOR = GREEN
 FPS = 30
-BG_FILE_NAME = "res/background.png"
+BG_FILE_NAME = "../res/background.png"
 IMAGE_NAMES = [["Tier_48", "Tier_108", "Tier_192"],
                ["SPO_48", "SPO_108", "SPO_192"],
                ["Dradra_48", "Dradra_108", "Dradra_192"],
                ["Wuerfeln_48", "Wuerfeln_108", "Wuerfeln_192"]]
-FILE_NAME = "res/{image_name}/{image_name}_{row}_{column}.png"
+FILE_NAME = "../res/{image_name}/{image_name}_{row}_{column}.png"
+SOUND_CONNECTED_FILE_NAME = "../res/Connected.wav"
+SOUND_VICTORY_FILE_NAME = "../res/Victory.wav"
+FIREWORKS_FILE_NAME = "../res/fireworks.gif"
 NUM_ROWS = [6, 9, 12]
 NUM_COLUMNS = [8, 12, 16]
 IMAGE_WIDTH = 4032
@@ -62,9 +65,9 @@ class PuzzleHustle:
         self.scale_factor = self.puzzle_height / IMAGE_HEIGHT
         self.cur_zoom = 1.0
         pygame.mixer.init()
-        self.sound_connected = pygame.mixer.Sound("res/Connected.wav")
-        self.sound_victory = pygame.mixer.Sound("res/Victory.wav")
-        self.fireworks_anim = animations.Animation("res/fireworks.gif", (1000, 1000))
+        self.sound_connected = pygame.mixer.Sound(SOUND_CONNECTED_FILE_NAME)
+        self.sound_victory = pygame.mixer.Sound(SOUND_VICTORY_FILE_NAME)
+        self.fireworks_anim = animations.Animation(FIREWORKS_FILE_NAME, (1000, 1000))
         self.anim_play_event = pygame.event.Event(PLAY_ANIMATION, {})
         self.anim_stop_event = pygame.event.Event(STOP_ANIMATION, {})
         self.start_menu = start_menu.StartMenu(self.main_surface, self.bg_image)
@@ -172,12 +175,12 @@ class PuzzleHustle:
                     self.update_display()
             self.clock.tick(FPS)
         pygame.quit()
-    
+
     def move_piece(self, piece_idx: int, movement: tuple) -> None:
         """Move the given piece and all connected ones by the given movement"""
         for cur_idx in self.piece_states[piece_idx][3]:
             self.piece_states[cur_idx][1] = utils.add_tuples(self.piece_states[cur_idx][1], movement)
-    
+
     def move_all_pieces(self, movement: tuple) -> None:
         """Move all pieces by the given movement"""
         remaining_pieces = {i for i in range(self.num_pieces)}
@@ -185,7 +188,7 @@ class PuzzleHustle:
             cur_idx = remaining_pieces.pop()
             self.move_piece(cur_idx, movement)
             remaining_pieces -= set(self.piece_states[cur_idx][3])
-    
+
     def rotate_piece(self, sel_piece_idx: int) -> None:
         """Rotate the selected piece and all connected ones counter-clockwise."""
         sel_pos = self.piece_states[sel_piece_idx][1]
@@ -197,7 +200,7 @@ class PuzzleHustle:
             self.piece_states[cur_piece_idx][2] = (self.piece_states[cur_piece_idx][2] + 1) % NUM_ROTATIONS
             self.piece_states[cur_piece_idx][0] = pygame.transform.rotate(self.piece_states[cur_piece_idx][0],
                                                                           ROTATION_DEGREE)
-    
+
     def initialize_puzzle_pieces(self) -> None:
         """Initialize the puzzle pieces randomly on the main surface and fill piece_states and piece_idx_stack"""
         for i, j in itertools.product(range(self.num_rows), range(self.num_columns)):
@@ -215,7 +218,7 @@ class PuzzleHustle:
             self.piece_states.append(cur_state)
             self.piece_idx_stack.append(cur_idx)
         self.update_display()
-    
+
     def update_display(self) -> None:
         """Blit all puzzle pieces to the main surface"""
         self.main_surface.fill(BG_COLOR)
@@ -223,7 +226,7 @@ class PuzzleHustle:
         for idx in self.piece_idx_stack:
             self.main_surface.blit(self.piece_states[idx][0], self.piece_states[idx][1])
         pygame.display.update()
-    
+
     def get_idx_of_selected_piece(self, mouse_pos: tuple):
         """Return the index of the foremost puzzle piece at the mouse position, or None if there is no piece at that
         position"""
@@ -235,7 +238,7 @@ class PuzzleHustle:
             return sel_indices[-1]
         else:
             return None
-    
+
     def check_neighbors(self, sel_piece_idx: int) -> bool:
         """Check for nearby neighbor pieces of the given piece. If found, connect them."""
         # determine target positions for neighbors. Neighbor order: top, left, bottom, right
@@ -276,7 +279,7 @@ class PuzzleHustle:
                     self.piece_states[idx][3] = new_block
                 neighbor_found = True
         return neighbor_found
-    
+
     def check_win(self) -> bool:
         """Check if the puzzle is completely solved, i.e. all pieces are connected"""
         if len(self.piece_states[0][3]) == self.num_pieces:

@@ -6,12 +6,13 @@ import pygame
 GREEN = (0, 153, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
-BG_PREFIX = "res/background"
-PREVIEW_PREFIX = "res/preview"
-ARROW_LEFT_PREFIX = "res/arrow_left_grey"
-ARROW_RIGHT_PREFIX = "res/arrow_right_grey"
-PLAY_PREFIX = "res/play_grey"
+BG_PREFIX = "../res/background"
+PREVIEW_PREFIX = "../res/preview"
+ARROW_LEFT_PREFIX = "../res/arrow_left_grey"
+ARROW_RIGHT_PREFIX = "../res/arrow_right_grey"
+PLAY_PREFIX = "../res/play_grey"
 PNG_SUFFIX = ".png"
+SOUND_CONFIRMED_FILE_NAME = "../res/Confirmed.wav"
 FPS = 30
 # The following menu item sizes work well on a 2560x1440 screen, so I use them as a benchmark for scaling.
 ARROW_SIZE = (90, 90)
@@ -79,7 +80,7 @@ class StartMenu:
 		self.play_button_center = (self.difficulty_center[0], HEIGHT_FOR_PLAY_BUTTON * self.main_surface.get_height())
 		self.msg_center = (self.play_button_center[0], HEIGHT_FOR_OPEN_BOX_MSG * self.main_surface.get_height())
 		self.clock = pygame.time.Clock()
-		self.sound_confirmed = pygame.mixer.Sound("res/Confirmed.wav")
+		self.sound_confirmed = pygame.mixer.Sound(SOUND_CONFIRMED_FILE_NAME)
 		# Initialize buttons
 		self.button_group = ClickableGroup()
 		on_click_functions = [self.decrement_image_id, self.increment_image_id, self.decrement_difficulty, self.increment_difficulty]

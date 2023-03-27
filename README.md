@@ -1,8 +1,8 @@
 # Puzzle Hustle
-Puzzle Hustle is a simple puzzle game using basic pygame functionality.
+Puzzle Hustle is a simple jigsaw puzzle game using basic pygame functionality.
 
 ## *Install*
-The build_win64 directory contains a ready-to-use executable file for win64, and the res directory contains all additional needed files. Download the build_win64 directory first, and then download the res one into the build_win64 one. Then you can open puzzle.exe.<br>
+The build_win64 directory contains a ready-to-use executable file for win64. Just download everything and open puzzle.exe.<br>
 There are no pre-builds for non-win64 systems yet, so in that case you have to use the python source code files instead.
 
 ## *How to play*
@@ -15,7 +15,7 @@ In the start menu, select your favourite image and the difficulty and click the 
 - Esc: Quit the game
 
 If a piece is close enough to a fitting neighbor piece, the two will automatically be combined, and you'll hear a sound notification. If there's no sound, the pieces do not fit.<br>
-**IMPORTANT**: If you move a group of multiple pieces at once (because they are already connected), the game only checks for fitting neighbors of the piece that is clicked on. So make sure that you select the correct piece to connect the group to other pieces/ groups.
+**IMPORTANT**: If you move a group of multiple pieces at once (because they are already connected), the game only checks for fitting neighbors of the piece that is clicked on. So make sure that you grabbed the correct piece to connect the group to other pieces/ groups.
 
 ## *Credits*
 - Game design and implementation: **Thomas Schneider**
