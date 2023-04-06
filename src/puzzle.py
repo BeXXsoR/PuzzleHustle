@@ -2,6 +2,7 @@
 
 # ------ Imports ------
 import sys
+import os
 import itertools
 import random
 import utils
@@ -18,19 +19,22 @@ GREEN = (0, 153, 0)
 BG_COLOR = GREEN
 FPS = 30
 BG_FILE_NAME = "../res/background.png"
-IMAGE_NAMES = [["Tier_48", "Tier_108", "Tier_192"],
+IMAGE_NAMES = [["n/a", "n/a", "n/a"],
+               ["Tier_48", "Tier_108", "Tier_192"],
                ["SPO_48", "SPO_108", "SPO_192"],
                ["Dradra_48", "Dradra_108", "Dradra_192"],
                ["Wuerfeln_48", "Wuerfeln_108", "Wuerfeln_192"]]
-FILE_NAME = "../res/{image_name}/{image_name}_{row}_{column}.png"
+IMAGE_DEFAULT_DIR = "../res/{image_name}"
+FILE_NAME = "{dir}/{image_name}_{row}_{column}.png"
 SOUND_CONNECTED_FILE_NAME = "../res/Connected.wav"
 SOUND_VICTORY_FILE_NAME = "../res/Victory.wav"
 FIREWORKS_FILE_NAME = "../res/fireworks.gif"
-NUM_ROWS = [6, 9, 12]
-NUM_COLUMNS = [8, 12, 16]
+NUM_ROWS = [6, 9, 12, 15]
+NUM_COLUMNS = [8, 12, 16, 20]
+NUM_PIECES = [48, 108, 192, 300]
+CLIPPER_SIZE = [53, 82, 62, 49]
 IMAGE_WIDTH = 4032
 IMAGE_HEIGHT = 3024
-CLIPPER_SIZE = [125, 82, 62]
 NUM_ROTATIONS = 4
 ROTATION_DEGREE = 90
 PICTURE_TO_DISPLAY_RATIO = 0.9
@@ -71,9 +75,8 @@ class PuzzleHustle:
         self.anim_play_event = pygame.event.Event(PLAY_ANIMATION, {})
         self.anim_stop_event = pygame.event.Event(STOP_ANIMATION, {})
         self.start_menu = start_menu.StartMenu(self.main_surface, self.bg_image)
-        self.image_id = None
         self.difficulty = None
-        self.image_name = None
+        self.dir_name = None
         self.num_rows = None
         self.num_columns = None
         self.clipper_size = None
@@ -84,12 +87,14 @@ class PuzzleHustle:
         self.piece_width = None
         self.piece_height = None
 
-    def set_image_and_difficulty(self, image_id: int = None, difficulty: int = None):
-        if image_id is not None:
-            self.image_id = image_id
+    def set_image_and_difficulty(self, image_id: int = None, difficulty: int = None, directory: str = None):
+        """Update the image id and the difficulty as well as all dependant variables"""
         if difficulty is not None:
             self.difficulty = difficulty
-        self.image_name = IMAGE_NAMES[self.image_id][self.difficulty]
+        if directory is not None:
+            self.dir_name = directory
+        else:
+            self.dir_name = IMAGE_DEFAULT_DIR.format(image_name=IMAGE_NAMES[image_id][self.difficulty])
         self.num_rows = NUM_ROWS[self.difficulty]
         self.num_columns = NUM_COLUMNS[self.difficulty]
         self.clipper_size = CLIPPER_SIZE[self.difficulty]
@@ -103,10 +108,10 @@ class PuzzleHustle:
     def main_game_loop(self):
         """Main entry point for the game"""
         # Handle start menu
-        start_puzzle, image_id, difficulty = self.start_menu.handle_events()
+        start_puzzle, image_id, difficulty, directory = self.start_menu.handle_events()
         if not start_puzzle:
             return
-        self.set_image_and_difficulty(image_id, difficulty)
+        self.set_image_and_difficulty(image_id, difficulty, directory)
         self.initialize_puzzle_pieces()
         sel_piece_idx = None
         zoom_key_pressed = False
@@ -210,7 +215,8 @@ class PuzzleHustle:
             cur_state[1] = (random.randrange(self.main_surface.get_width() - self.piece_width),
                             random.randrange(self.main_surface.get_height() - self.piece_height))
             cur_state[2] = random.randrange(NUM_ROTATIONS)
-            orig_image = pygame.image.load(FILE_NAME.format(image_name=self.image_name, row=i, column=j)).convert_alpha()
+            image_name = os.path.basename(self.dir_name)
+            orig_image = pygame.image.load(FILE_NAME.format(dir=self.dir_name, image_name=image_name, row=i, column=j)).convert_alpha()
             cur_state[4] = orig_image
             scaled_image = pygame.transform.scale(orig_image, (self.piece_width, self.piece_height))
             scaled_image = pygame.transform.rotate(scaled_image, cur_state[2] * ROTATION_DEGREE)
